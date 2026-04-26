@@ -85,6 +85,7 @@ public slots:
 
     void loadSettings();
     void saveSettings();
+    void applyStyle();
 
 private:
     void updatePreview();

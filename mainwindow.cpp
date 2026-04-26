@@ -202,9 +202,11 @@ void MainWindow::setupUi() {
     Ui_MainWindow ui;
     ui.setupUi(this);
 
-    setWindowTitle("MouseWriter - 鼠标写字");
+    setWindowTitle("SeeWoo Writer");
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     setMinimumSize(600, 720);
+
+    applyStyle();
 
     m_textInput = ui.textInput;
     m_preview = ui.preview;
@@ -673,4 +675,211 @@ void MainWindow::onColorDrawToggled(bool checked) {
     if (m_drawer) {
         m_drawer->enableColorDraw(checked);
     }
+}
+
+void MainWindow::applyStyle() {
+    QString style = R"(
+        QWidget {
+            background-color: #1e1e2e;
+            color: #cdd6f4;
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            font-size: 10pt;
+        }
+        QMainWindow {
+            background-color: #1e1e2e;
+        }
+        QLabel {
+            color: #cdd6f4;
+            background-color: transparent;
+        }
+        QPushButton {
+            background-color: #45475a;
+            color: #cdd6f4;
+            border: 1px solid #585b70;
+            border-radius: 6px;
+            padding: 8px 16px;
+            min-width: 80px;
+        }
+        QPushButton:hover {
+            background-color: #585b70;
+            border-color: #89b4fa;
+        }
+        QPushButton:pressed {
+            background-color: #313244;
+        }
+        QPushButton:disabled {
+            background-color: #313244;
+            color: #6c7086;
+        }
+        QLineEdit, QSpinBox, QComboBox {
+            background-color: #313244;
+            color: #cdd6f4;
+            border: 1px solid #45475a;
+            border-radius: 4px;
+            padding: 6px;
+            selection-background-color: #89b4fa;
+        }
+        QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+            border-color: #89b4fa;
+        }
+        QCheckBox {
+            color: #cdd6f4;
+            spacing: 8px;
+        }
+        QCheckBox::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 2px solid #45475a;
+            background-color: #313244;
+        }
+        QCheckBox::indicator:checked {
+            background-color: #89b4fa;
+            border-color: #89b4fa;
+        }
+        QCheckBox::indicator:hover {
+            border-color: #89b4fa;
+        }
+        QSlider::groove:horizontal {
+            background-color: #45475a;
+            height: 6px;
+            border-radius: 3px;
+        }
+        QSlider::handle:horizontal {
+            background-color: #89b4fa;
+            width: 16px;
+            margin: -5px 0;
+            border-radius: 8px;
+        }
+        QTabWidget::pane {
+            border: 1px solid #45475a;
+            border-radius: 8px;
+            background-color: #181825;
+        }
+        QTabBar::tab {
+            background-color: #313244;
+            color: #a6adc8;
+            padding: 10px 20px;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+            margin-right: 2px;
+        }
+        QTabBar::tab:selected {
+            background-color: #45475a;
+            color: #cdd6f4;
+        }
+        QTabBar::tab:hover {
+            background-color: #45475a;
+            color: #cdd6f4;
+        }
+        QScrollArea, QTextEdit, QListWidget {
+            background-color: #181825;
+            color: #cdd6f4;
+            border: 1px solid #45475a;
+            border-radius: 6px;
+        }
+        QProgressBar {
+            background-color: #45475a;
+            border-radius: 4px;
+            text-align: center;
+            color: #cdd6f4;
+        }
+        QProgressBar::chunk {
+            background-color: #89b4fa;
+            border-radius: 4px;
+        }
+    )";
+
+    setStyleSheet(style);
+
+    QFont defaultFont("Microsoft YaHei", 10);
+    setFont(defaultFont);
+
+    QList<QSpinBox*> spinBoxes = findChildren<QSpinBox*>();
+    for (QSpinBox* sb : spinBoxes) {
+        sb->setStyleSheet(R"(
+            QSpinBox {
+                background-color: #313244;
+                color: #cdd6f4;
+                border: 1px solid #45475a;
+                border-radius: 4px;
+                padding: 4px;
+            }
+            QSpinBox:focus {
+                border-color: #89b4fa;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                background-color: #45475a;
+                border-radius: 2px;
+            }
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                background-color: #585b70;
+            }
+        )");
+    }
+
+    QList<QComboBox*> combos = findChildren<QComboBox*>();
+    for (QComboBox* cb : combos) {
+        cb->setStyleSheet(R"(
+            QComboBox {
+                background-color: #313244;
+                color: #cdd6f4;
+                border: 1px solid #45475a;
+                border-radius: 4px;
+                padding: 6px;
+            }
+            QComboBox:focus {
+                border-color: #89b4fa;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 24px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #313244;
+                color: #cdd6f4;
+                border: 1px solid #45475a;
+                selection-background-color: #45475a;
+            }
+        )");
+    }
+
+    QList<QPushButton*> buttons = findChildren<QPushButton*>();
+    for (QPushButton* btn : buttons) {
+        QString name = btn->objectName();
+        if (name == "drawBtn") {
+            btn->setStyleSheet(R"(
+                QPushButton {
+                    background-color: #313244;
+                    color: #f5e0dc;
+                    border: 2px solid #f5c2e7;
+                    border-radius: 8px;
+                    padding: 12px 24px;
+                    font-size: 12pt;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #45475a;
+                    border-color: #f5c2e7;
+                }
+            )");
+        } else if (name == "stopBtn") {
+            btn->setStyleSheet(R"(
+                QPushButton {
+                    background-color: #313244;
+                    color: #f38ba8;
+                    border: 2px solid #f38ba8;
+                    border-radius: 8px;
+                    padding: 12px 24px;
+                    font-size: 12pt;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #45475a;
+                }
+            )");
+        }
+    }
+
+    log("已应用美化样式");
 }
