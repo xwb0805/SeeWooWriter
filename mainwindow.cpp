@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include <windows.h>
 #include <QFontDialog>
 #include <QColorDialog>
 #include <QFileDialog>
@@ -112,7 +113,11 @@ MainWindow::MainWindow(QWidget *parent)
     , m_overlayProgress(nullptr)
     , m_overlayStopBtn(nullptr)
 {
-    setupUi();
+    try {
+        setupUi();
+    } catch (...) {
+        MessageBoxW(NULL, L"setupUi failed!", L"Error", MB_OK);
+    }
 
     m_font.setFamily(QFontDatabase::families().contains("SimHei") ? "SimHei" : QFontDatabase::families().first());
     m_font.setPointSize(48);
