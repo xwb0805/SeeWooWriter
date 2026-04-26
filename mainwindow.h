@@ -93,6 +93,7 @@ private:
     void updateScreenInfo();
     void setColorFromPalette(int index);
     void applyMultiColorFilter(const QColor& baseColor);
+    QString getColorName(const QColor& color);
 
     QLineEdit* m_textInput;
     QFont m_font;

@@ -546,23 +546,20 @@ void MainWindow::startDrawingNow() {
     if (m_stopBtn) m_stopBtn->setEnabled(true);
     if (m_overlayPanel) m_overlayPanel->show();
 
-    QCheckBox* autoColorSelectCheck = findChild<QCheckBox*>("autoColorSelectCheck");
     QCheckBox* colorDrawCheck = findChild<QCheckBox*>("colorDrawCheck");
+    QCheckBox* autoColorSelectCheck = findChild<QCheckBox*>("autoColorSelectCheck");
 
     if (colorDrawCheck && colorDrawCheck->isChecked()) {
+        m_drawer->clickPenIcon();
+
+        QColor selected;
         if (autoColorSelectCheck && autoColorSelectCheck->isChecked()) {
-            if (m_drawer->getPenZone().isEmpty() || m_drawer->getColorZone().isEmpty()) {
-                QMessageBox::warning(this, "提示", "请先框选笔图标区域和调色板区域");
-                return;
-            }
-
-            m_drawer->clickPenIcon();
-
-            QColor selected;
             if (m_drawer->detectAndSelectColor(selected)) {
                 m_color = selected;
                 applyMultiColorFilter(m_color);
-                log(QString("自动选择颜色: %1").arg(m_color.name()));
+                QString colorName = getColorName(m_color);
+                log(QString("选择颜色: %1").arg(colorName));
+                QMessageBox::information(this, "提示", QString("请在希沃调色板中选择颜色: %1\n选择好后点击确定").arg(colorName));
             }
         } else {
             applyMultiColorFilter(m_color);
@@ -577,7 +574,7 @@ void MainWindow::startDrawingNow() {
     int offsetY = m_offsetYBox ? m_offsetYBox->value() : 0;
     int threshold = m_thresholdBox ? m_thresholdBox->value() : 128;
     int moveDelay = m_moveDelayBox ? m_moveDelayBox->value() : 1;
-int mouseMethod = m_mouseMethodCombo ? m_mouseMethodCombo->currentIndex() : 0;
+    int mouseMethod = m_mouseMethodCombo ? m_mouseMethodCombo->currentIndex() : 0;
 
     m_drawer->setMouseMethod((MouseMethod)mouseMethod);
     m_drawer->setStopFlag(&m_stopFlag);
@@ -882,4 +879,27 @@ void MainWindow::applyStyle() {
     }
 
     log("已应用美化样式");
+}
+
+QString MainWindow::getColorName(const QColor& color) {
+    int r = color.red();
+    int g = color.green();
+    int b = color.blue();
+
+    if (r > 200 && g < 50 && b < 50) return "红色";
+    if (g > 200 && r < 50 && b < 50) return "绿色";
+    if (b > 200 && r < 50 && g < 50) return "蓝色";
+    if (r > 200 && g > 200 && b < 50) return "黄色";
+    if (r > 200 && g < 50 && b > 200) return "紫色";
+    if (r > 200 && g > 100 && b < 50) return "橙色";
+    if (r > 150 && g > 150 && b > 150) return "白色";
+    if (r < 50 && g < 50 && b < 50) return "黑色";
+    if (r > 100 && g > 100 && b > 200) return "浅蓝色";
+    if (r > 200 && g > 100 && b > 150) return "粉色";
+    if (r > 100 && g > 200 && b > 100) return "浅绿色";
+
+    return QString("#%1%2%3")
+        .arg(r, 2, 16, QChar('0'))
+        .arg(g, 2, 16, QChar('0'))
+        .arg(b, 2, 16, QChar('0')).toUpper();
 }
