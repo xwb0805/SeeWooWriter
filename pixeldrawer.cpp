@@ -697,7 +697,7 @@ void PixelDrawer::drawPixmapOnScreen(const QPixmap& pixmap, QPoint offset) {
     int bytesPerLine = image.bytesPerLine();
 
     bool currentlyDown = false;
-    int lastDetectedRow = -1;
+    int lastDetectY = -100;
 
     for (int y = 0; y < h && (!stopFlag || !*stopFlag); ++y) {
         if (stopFlag && *stopFlag) break;
@@ -706,21 +706,12 @@ void PixelDrawer::drawPixmapOnScreen(const QPixmap& pixmap, QPoint offset) {
             break;
         }
 
-        if (m_autoColor && (y == 0 || y > lastDetectedRow)) {
+        if (m_autoColor && y - lastDetectY >= 50) {
             QColor detectedColor = getPixelColor(lastPos.x(), lastPos.y());
             if (detectedColor.isValid()) {
                 m_currentColor = detectedColor;
-                lastDetectedRow = y;
-                qDebug() << "Row" << y << "detected color:" << detectedColor.name();
-
-                for (int x = 0; x < w; ++x) {
-                    if (bits[y * bytesPerLine + x] < threshold) {
-                        QColor c = m_currentColor;
-                        if (c.isValid()) {
-                            image.setPixel(x, y, qRgba(c.red(), c.green(), c.blue(), 255));
-                        }
-                    }
-                }
+                lastDetectY = y;
+                qDebug() << "Row" << y << "detected color:" << detectedColor.name() << "at" << lastPos.x() << lastPos.y();
             }
         }
 
@@ -779,6 +770,16 @@ void PixelDrawer::drawPixmapOnScreen(const QPixmap& pixmap, QPoint offset) {
                 int dy = screenY - lastPos.y();
                 if (dx * dx + dy * dy > 2) {
                     (this->*moveMouseFunc)(screenX, screenY);
+
+                    if (m_colorDraw && m_currentColor.isValid()) {
+                        HDC hdc = GetDC(nullptr);
+                        if (m_currentColor.alpha() > 0) {
+                            COLORREF cr = RGB(m_currentColor.red(), m_currentColor.green(), m_currentColor.blue());
+                            SetPixel(hdc, screenX, screenY, cr);
+                        }
+                        ReleaseDC(nullptr, hdc);
+                    }
+
                     QThread::msleep(moveDelay);
                 }
             } else if (!isDark && inStroke) {
