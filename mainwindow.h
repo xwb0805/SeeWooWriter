@@ -94,10 +94,13 @@ private:
     void setColorFromPalette(int index);
     void applyMultiColorFilter(const QColor& baseColor);
     QString getColorName(const QColor& color);
+    QPixmap extractColorChannel(const QPixmap& source, const QString& colorType, int threshold);
+    void setDrawColor(const QString& colorType);
 
     QLineEdit* m_textInput;
     QFont m_font;
     QColor m_color;
+    QString m_currentDrawColor;
     QLabel* m_colorLabel;
     QLabel* m_preview;
     QTextEdit* m_log;

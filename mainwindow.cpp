@@ -459,6 +459,61 @@ void MainWindow::applyMultiColorFilter(const QColor& baseColor) {
     updatePreview();
 }
 
+QPixmap MainWindow::extractColorChannel(const QPixmap& source, const QString& colorType, int threshold) {
+    if (source.isNull()) return source;
+
+    QImage img = source.toImage();
+    QImage result(img.width(), img.height(), QImage::Format_Grayscale8);
+
+    int r, g, b;
+    for (int y = 0; y < img.height(); y++) {
+        for (int x = 0; x < img.width(); x++) {
+            QRgb pixel = img.pixel(x, y);
+            r = qRed(pixel);
+            g = qGreen(pixel);
+            b = qBlue(pixel);
+            int gray = 0;
+
+            if (colorType == "red") {
+                gray = r;
+            } else if (colorType == "green") {
+                gray = g;
+            } else if (colorType == "blue") {
+                gray = b;
+            } else if (colorType == "yellow") {
+                gray = qMin(255, r + g);
+            } else if (colorType == "cyan") {
+                gray = qMin(255, g + b);
+            } else if (colorType == "magenta") {
+                gray = qMin(255, r + b);
+            } else if (colorType == "white") {
+                gray = qMin(255, r + g + b);
+            } else if (colorType == "dark") {
+                gray = 255 - qMin(255, r + g + b);
+            } else {
+                gray = qGray(pixel);
+            }
+
+            result.setPixel(x, y, gray > threshold ? 255 : 0);
+        }
+    }
+
+    return QPixmap::fromImage(result);
+}
+
+void MainWindow::setDrawColor(const QString& colorType) {
+    if (m_originalPixmap.isNull()) return;
+
+    int threshold = m_thresholdBox ? m_thresholdBox->value() : 128;
+    m_currentPixmap = extractColorChannel(m_originalPixmap, colorType, threshold);
+
+    QString colorName = colorType;
+    colorName[0] = colorName[0].toUpper();
+    log(QString("提取颜色: %1, 阈值: %2").arg(colorName).arg(threshold));
+
+    updatePreview();
+}
+
 void MainWindow::onSelectImage() {
     QString fileName = QFileDialog::getOpenFileName(this, "选择图片", "", "Images (*.png *.jpg *.jpeg *.bmp)");
     if (!fileName.isEmpty()) {
@@ -547,23 +602,28 @@ void MainWindow::startDrawingNow() {
     if (m_overlayPanel) m_overlayPanel->show();
 
     QCheckBox* colorDrawCheck = findChild<QCheckBox*>("colorDrawCheck");
-    QCheckBox* autoColorSelectCheck = findChild<QCheckBox*>("autoColorSelectCheck");
 
     if (colorDrawCheck && colorDrawCheck->isChecked()) {
-        m_drawer->clickPenIcon();
+        QStringList colors;
+        colors << "red" << "green" << "blue" << "yellow" << "cyan" << "magenta" << "white" << "dark";
 
-        QColor selected;
-        if (autoColorSelectCheck && autoColorSelectCheck->isChecked()) {
-            if (m_drawer->detectAndSelectColor(selected)) {
-                m_color = selected;
-                applyMultiColorFilter(m_color);
-                QString colorName = getColorName(m_color);
-                log(QString("选择颜色: %1").arg(colorName));
-                QMessageBox::information(this, "提示", QString("请在希沃调色板中选择颜色: %1\n选择好后点击确定").arg(colorName));
-            }
-        } else {
-            applyMultiColorFilter(m_color);
+        bool ok;
+        QString selectedColor = QInputDialog::getItem(this, "选择颜色", "请选择要绘制的颜色:", colors, 0, false, &ok);
+
+        if (!ok || selectedColor.isEmpty()) {
+            log("取消绘制");
+            m_drawBtn->setEnabled(true);
+            return;
         }
+
+        m_currentDrawColor = selectedColor;
+        setDrawColor(selectedColor);
+
+        QString colorName = selectedColor;
+        colorName[0] = colorName[0].toUpper();
+        log(QString("开始绘制: %1").arg(colorName));
+
+        QMessageBox::information(this, "提示", QString("请在希沃选择%1画笔\n选择好后开始绘制").arg(colorName));
     } else {
         m_currentPixmap = m_originalPixmap;
     }
