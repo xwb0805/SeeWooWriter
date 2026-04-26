@@ -96,11 +96,15 @@ private:
     QString getColorName(const QColor& color);
     QPixmap extractColorChannel(const QPixmap& source, const QString& colorType, int threshold);
     void setDrawColor(const QString& colorType);
+    void startNextColor();
+    void onColorDrawingFinished();
 
     QLineEdit* m_textInput;
     QFont m_font;
     QColor m_color;
     QString m_currentDrawColor;
+    QStringList m_drawColorsQueue;
+    int m_currentColorIndex;
     QLabel* m_colorLabel;
     QLabel* m_preview;
     QTextEdit* m_log;

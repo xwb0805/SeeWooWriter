@@ -111,6 +111,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_overlayPreview(nullptr)
     , m_overlayProgress(nullptr)
     , m_overlayStopBtn(nullptr)
+, m_currentColorIndex(0)
 {
     setupUi();
 
@@ -202,11 +203,11 @@ void MainWindow::setupUi() {
     Ui_MainWindow ui;
     ui.setupUi(this);
 
-    setWindowTitle("SeeWoo Writer");
+setWindowTitle("SeeWoo Writer");
     setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint);
     setMinimumSize(600, 720);
 
-    // applyStyle();
+    // applyStyle(); // Temporarily disabled - causes UI not showing on some systems
 
     m_textInput = ui.textInput;
     m_preview = ui.preview;
@@ -604,26 +605,35 @@ void MainWindow::startDrawingNow() {
     QCheckBox* colorDrawCheck = findChild<QCheckBox*>("colorDrawCheck");
 
     if (colorDrawCheck && colorDrawCheck->isChecked()) {
-        QStringList colors;
-        colors << "red" << "green" << "blue" << "yellow" << "cyan" << "magenta" << "white" << "dark";
-
+        QStringList colorOptions;
+        colorOptions << "红色(red)" << "绿色(green)" << "蓝色(blue)" << "黄色(yellow)" << "青色(cyan)" << "品红(magenta)" << "白色(white)" << "黑色(dark)";
+        
         bool ok;
-        QString selectedColor = QInputDialog::getItem(this, "选择颜色", "请选择要绘制的颜色:", colors, 0, false, &ok);
-
+        QString selectedColor = QInputDialog::getItem(this, "选择颜色", "选择要绘制的颜色:", colorOptions, 0, false, &ok);
+        
         if (!ok || selectedColor.isEmpty()) {
             log("取消绘制");
             m_drawBtn->setEnabled(true);
             return;
         }
-
-        m_currentDrawColor = selectedColor;
-        setDrawColor(selectedColor);
-
+        
         QString colorName = selectedColor;
-        colorName[0] = colorName[0].toUpper();
-        log(QString("开始绘制: %1").arg(colorName));
-
-        QMessageBox::information(this, "提示", QString("请在希沃选择%1画笔\n选择好后开始绘制").arg(colorName));
+        if (colorName.contains("(")) {
+            colorName = colorName.mid(colorName.indexOf("(") + 1);
+            colorName.chop(1);
+        }
+        
+        m_currentDrawColor = colorName;
+        setDrawColor(colorName);
+        m_drawColorsQueue.clear();
+        m_drawColorsQueue.append(colorName);
+        m_currentColorIndex = 1;
+        
+        QString displayName = colorName;
+        displayName[0] = displayName[0].toUpper();
+        log(QString("开始绘制: %1").arg(displayName));
+        
+        QMessageBox::information(this, "提示", QString("请在希沃选择%1画笔\n选择好后点击绘制").arg(displayName));
     } else {
         m_currentPixmap = m_originalPixmap;
     }
@@ -672,11 +682,51 @@ void MainWindow::onStopDrawing() {
 
 void MainWindow::onDrawingFinished() {
     m_isDrawing = false;
+    
     if (m_drawBtn) m_drawBtn->setEnabled(true);
     if (m_stopBtn) m_stopBtn->setEnabled(false);
     if (m_overlayPanel) m_overlayPanel->hide();
     show();
-    log("绘制完成");
+    
+    if (m_drawColorsQueue.isEmpty() || m_currentColorIndex >= m_drawColorsQueue.size()) {
+        log("绘制完成");
+        m_currentColorIndex = 0;
+        m_drawColorsQueue.clear();
+        return;
+    }
+    
+    QString nextColor = m_drawColorsQueue[m_currentColorIndex];
+    QMessageBox::StandardButton btn = QMessageBox::question(this, "继续绘制", 
+        QString("当前颜色(%1)绘制完成！\n\n是否继续绘制下一个颜色？").arg(nextColor),
+        QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    
+    if (btn == QMessageBox::Yes) {
+        startNextColor();
+    } else {
+        log("绘制完成");
+        m_currentColorIndex = 0;
+        m_drawColorsQueue.clear();
+    }
+}
+
+void MainWindow::startNextColor() {
+    if (m_currentColorIndex >= m_drawColorsQueue.size()) {
+        onDrawingFinished();
+        return;
+    }
+    
+    QString nextColor = m_drawColorsQueue[m_currentColorIndex];
+    m_currentColorIndex++;
+    
+    setDrawColor(nextColor);
+    
+    QString colorName = nextColor;
+    colorName[0] = colorName[0].toUpper();
+    log(QString("继续绘制: %1 (%2/%3)").arg(colorName).arg(m_currentColorIndex).arg(m_drawColorsQueue.size()));
+    
+    QMessageBox::information(this, "提示", QString("请在希沃选择%1画笔\n选择好后开始绘制").arg(colorName));
+    
+    onStartDrawing();
 }
 
 void MainWindow::onCursorUpdate() {
