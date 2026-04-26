@@ -15,6 +15,7 @@ public:
 
 signals:
     void escapePressed();
+    void pausePressed();
 
 private:
     HHOOK m_hook;

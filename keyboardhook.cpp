@@ -9,6 +9,9 @@ LRESULT CALLBACK keyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam) {
         if (kb->vkCode == VK_ESCAPE && g_keyboardHook) {
             emit g_keyboardHook->escapePressed();
         }
+        if (kb->vkCode == 0x50 && g_keyboardHook) {  // 'P' key
+            emit g_keyboardHook->pausePressed();
+        }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }

@@ -79,6 +79,7 @@ public slots:
     void onSelectPenZone();
     void onSelectColorZone();
     void onSelectDrawZone();
+    void togglePause();
     void setPenZone(const QRect& zone);
     void setColorZone(const QRect& zone);
     void setDrawZone(const QRect& zone);
@@ -122,6 +123,7 @@ private:
     QPixmap m_currentPixmap;
     QPixmap m_originalPixmap;
     bool m_isDrawing;
+    bool m_isPaused;
     std::atomic<bool> m_stopFlag;
     QTimer* m_cursorTimer;
     QLabel* m_cursorPosLabel;

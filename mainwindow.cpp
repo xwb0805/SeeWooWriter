@@ -112,6 +112,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_overlayProgress(nullptr)
     , m_overlayStopBtn(nullptr)
 , m_currentColorIndex(0)
+, m_isPaused(false)
 {
     setupUi();
 
@@ -290,6 +291,11 @@ void MainWindow::connectSignals() {
         if (m_isDrawing) {
             m_stopFlag = true;
             log("按下Escape，已停止!");
+        }
+    });
+    connect(m_keyboardHook, &KeyboardHook::pausePressed, this, [this]() {
+        if (m_isDrawing) {
+            togglePause();
         }
     });
     m_keyboardHook->start();
@@ -666,6 +672,7 @@ void MainWindow::startDrawingNow() {
 
 void MainWindow::onStopDrawing() {
     m_stopFlag = true;
+    m_isPaused = false;
     m_countdownTimer->stop();
     if (m_drawBtn) m_drawBtn->setEnabled(true);
     if (m_stopBtn) m_stopBtn->setEnabled(false);
@@ -678,6 +685,29 @@ void MainWindow::onStopDrawing() {
         m_drawThread->wait();
     }
     onDrawingFinished();
+}
+
+void MainWindow::togglePause() {
+    if (!m_isDrawing) return;
+    
+    m_isPaused = !m_isPaused;
+    
+    if (m_isPaused) {
+        m_stopFlag = true;
+        log("已暂停 (按P继续)");
+        if (m_overlayPreview) m_overlayPreview->setText("已暂停");
+    } else {
+        m_stopFlag = false;
+        m_isDrawing = true;
+        log("继续绘制");
+        
+        int offsetX = m_offsetXBox ? m_offsetXBox->value() : 0;
+        int offsetY = m_offsetYBox ? m_offsetYBox->value() : 0;
+        
+        m_drawThread = new DrawingThread(m_drawer, m_currentPixmap, QPoint(offsetX, offsetY), this);
+        connect(m_drawThread, &QThread::finished, this, &MainWindow::onDrawingFinished);
+        m_drawThread->start();
+    }
 }
 
 void MainWindow::onDrawingFinished() {
